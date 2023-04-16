@@ -693,6 +693,8 @@ Dim TravelDis As Currency
 Dim FlipTravelDis As Currency
 Dim Hand1 As Integer
 Dim Hand2 As Integer
+Dim OGBet As Integer
+Dim DCount As Integer
 
 Private Sub cmdAskBetOK_Click()
     If Bet <> 0 Then
@@ -716,6 +718,8 @@ Private Sub cmdAskBetOK_Click()
         Next x
         
         Chip = 0
+        
+        OGBet = Bet
     End If
 End Sub
 
@@ -767,8 +771,10 @@ Private Sub cmdDouble_Click()
     Call GiveCard(Player, faceUp)
     Call HideAll
     
-    Moni = Moni - Bet
-    Bet = Bet * 2
+    DCount = DCount + 1
+    
+    Moni = Moni - OGBet
+    Bet = Bet + OGBet
     
     lblBetAmountD.Caption = "Bet: $" & Bet
     
@@ -883,8 +889,8 @@ Private Sub cmdSplit_Click()
     b = 1
     Call FixPlayerPos
     
-    Moni = Moni - Bet
-    Bet = Bet * 2
+    Moni = Moni - OGBet
+    Bet = Bet + OGBet
     lblBetAmountD.Caption = "Bet: $" & Bet
     
     With lblHand
@@ -1050,6 +1056,7 @@ Private Sub SplitStand()
             Dim wins As Integer
             If Hand1 > 21 And Hand2 > 21 Then
                 With lblDisplay
+                    .ForeColor = vbRed
                     .Caption = "Both Bust"
                     .FontBold = True
                     .FontSize = 70
@@ -1058,34 +1065,11 @@ Private Sub SplitStand()
                     .Visible = True
                     .ZOrder 0
                 End With
-                wins = -2
-                Select Case wins
-                    Case 1
-                        Moni = Moni + Bet / 2
-                    Case 2
-                        Moni = Moni + Bet * 2
-                End Select
-                Pause (50)
+                SoundBuffer = StrConv(LoadResData("AWW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (110)
                 Call CleanTable
-            ElseIf DealerHand > 21 And Hand1 <= 21 And Hand2 <= 21 Then
-                With lblDisplay
-                    .Caption = "Both Win"
-                    .FontBold = True
-                    .FontSize = 70
-                    .Left = (Me.Width / 2) - (lblDisplay.Width / 2)
-                    .Top = (Me.Height / 2) - 2 * (lblDisplay.Height / 2)
-                    .Visible = True
-                    .ZOrder 0
-                End With
-                wins = 2
-                 Select Case wins
-                Case 1
-                    Moni = Moni + Bet / 2
-                Case 2
-                    Moni = Moni + Bet * 2
-                End Select
-                Pause (50)
-                Call CleanTable
+                GoTo lev:
             End If
             Select Case DealerHand
         
@@ -1098,10 +1082,29 @@ tryA:
             
             End Select
             
+            If DealerHand > 21 And Hand1 <= 21 And Hand2 <= 21 Then
+                With lblDisplay
+                    .Caption = "Both Win"
+                    .ForeColor = vbGreen
+                    .FontBold = True
+                    .FontSize = 70
+                    .Left = (Me.Width / 2) - (lblDisplay.Width / 2)
+                    .Top = (Me.Height / 2) - 2 * (lblDisplay.Height / 2)
+                    .Visible = True
+                    .ZOrder 0
+                End With
+                SoundBuffer = StrConv(LoadResData("WIN1", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (80)
+                wins = wins + 2 + DCount
+                Moni = Moni + wins * OGBet
+                Moni = Moni
+                Pause (50)
+                Call CleanTable
             
-            If Hand1 > 21 Then
-                wins = wins - 1
+            ElseIf Hand1 > 21 Then
                 With lblHand2Stat
+                    .ForeColor = vbRed
                     .Caption = "Bust"
                     .FontBold = True
                     .FontSize = 54
@@ -1110,9 +1113,15 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("AWW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (110)
+                
+                
             ElseIf DealerHand > 21 Then
-                wins = wins + 1
+                wins = wins + 2 + DCount
                 With lblHand2Stat
+                    .ForeColor = vbGreen
                     .Caption = "Win"
                     .FontBold = True
                     .FontSize = 54
@@ -1121,8 +1130,13 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("WIN1", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (80)
             ElseIf Hand1 = DealerHand Then
+                wins = wins + 1 + DCount
                 With lblHand2Stat
+                    .ForeColor = vbWhite
                     .Caption = "Push"
                     .FontBold = True
                     .FontSize = 54
@@ -1131,9 +1145,14 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("DRAW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (70)
+                
             ElseIf Hand1 > DealerHand Then
-                wins = wins + 1
+                wins = wins + 2 + DCount
                 With lblHand2Stat
+                    .ForeColor = vbGreen
                     .Caption = "Win"
                     .FontBold = True
                     .FontSize = 54
@@ -1142,8 +1161,13 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("WIN1", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (80)
+                
             ElseIf DealerHand > Hand1 Then
                 With lblHand2Stat
+                    .ForeColor = vbRed
                     .Caption = "Lose"
                     .FontBold = True
                     .FontSize = 54
@@ -1152,10 +1176,15 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("AWW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (110)
             End If
+            
             
             If Hand2 > 21 Then
                 With lblHand1Stat
+                    .ForeColor = vbRed
                     .Caption = "Bust"
                     .FontBold = True
                     .FontSize = 54
@@ -1164,9 +1193,13 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("AWW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (110)
             ElseIf DealerHand > 21 Then
-                wins = wins + 2
+                wins = wins + 2 + DCount
                 With lblHand1Stat
+                    .ForeColor = vbGreen
                     .Caption = "Win"
                     .FontBold = True
                     .FontSize = 54
@@ -1175,8 +1208,13 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("WIN1", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (80)
             ElseIf Hand2 = DealerHand Then
+                wins = wins + 1 + DCount
                 With lblHand1Stat
+                    .ForeColor = vbWhite
                     .Caption = "Push"
                     .FontBold = True
                     .FontSize = 54
@@ -1185,9 +1223,13 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("DRAW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (70)
             ElseIf Hand2 > DealerHand Then
-                wins = wins + 1
+                wins = wins + 2 + DCount
                 With lblHand1Stat
+                    .ForeColor = vbGreen
                     .Caption = "Win"
                     .FontBold = True
                     .FontSize = 54
@@ -1196,8 +1238,12 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("WIN1", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (80)
             ElseIf DealerHand > Hand2 Then
                 With lblHand1Stat
+                    .ForeColor = vbRed
                     .Caption = "Lose"
                     .FontBold = True
                     .FontSize = 54
@@ -1206,18 +1252,17 @@ tryA:
                     .Visible = True
                     .ZOrder 0
                 End With
+                SoundBuffer = StrConv(LoadResData("AWW", "SOUND"), vbUnicode)
+                retVal = sndPlaySound(SoundBuffer, SND_ASYNC Or SND_NODEFAULT Or SND_MEMORY)
+                Pause (110)
             End If
             
-            Select Case wins
-                Case 1
-                    Moni = Moni + Bet / 2
-                Case 2
-                    Moni = Moni + Bet * 2
-            End Select
+            Moni = Moni + wins * OGBet
+            
             Pause (80)
             Call CleanTable
     End Select
- 
+lev:
 End Sub
 Private Sub cmdStand_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If HoverCounter > 1 Then
@@ -2564,6 +2609,8 @@ Private Sub CleanTable()
     lblHand1Stat.Visible = False
     lblHand2Stat.Visible = False
     
+    lblDisplay.Visible = False
+    
     Call CleanVars
     
     Call Pause(50)
@@ -2590,6 +2637,8 @@ lstDealer.Clear
 Bet = 0
 Hand1 = 0
 Hand2 = 0
+OGBet = 0
+DCount = 0
 DoubleCheck = False
 SplitCheck = False
 SplitMode = False
